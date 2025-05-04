@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Chat Test</title>
+    <style>
+        body {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+        }
+        #loading {
+            display: none;
+        }
+        #response {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gemini Chat Test</h1>
+    <div>
+        <label for="prompt">Enter your prompt:</label>
+        <textarea id="prompt" placeholder="Type your message here..."></textarea>
+    </div>
+    <button id="submit" onclick="sendMessage()">Send Message</button>
+    <div id="loading">Loading...</div>
+    <div id="response"></div>
+
+    <script>
+        async function sendMessage() {
+            const prompt = document.getElementById('prompt').value;
+            const submitButton = document.getElementById('submit');
+            const loading = document.getElementById('loading');
+            const responseDiv = document.getElementById('response');
+
+            if (!prompt) {
+                alert('Please enter a prompt');
+                return;
+            }
+
+            submitButton.disabled = true;
+            loading.style.display = 'block';
+            responseDiv.textContent = '';
+
+            try {
+                const response = await fetch('http://127.0.0.1:3000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: prompt
+                            }]
+                        }]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const responseText = JSON.parse(data.response).candidates[0].content.parts[0].text;
+                responseDiv.textContent = responseText;
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                submitButton.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        document.getElementById('prompt').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html> 
